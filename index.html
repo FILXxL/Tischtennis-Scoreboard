@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Tennis Scoreboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .scoreboard {
+            background-color: #2d2d2d;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 800px;
+        }
+
+        .players {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .player {
+            text-align: center;
+            flex: 1;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: #3d3d3d;
+            margin: 0 1rem;
+        }
+
+        .player.active {
+            background-color: #4CAF50;
+        }
+
+        .player-name {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .score {
+            font-size: 4rem;
+            font-weight: bold;
+        }
+
+        .sets {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .set {
+            width: 2rem;
+            height: 2rem;
+            background-color: #3d3d3d;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .set.won {
+            background-color: #4CAF50;
+        }
+
+        .serve-indicator {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-top: 1rem;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="scoreboard">
+        <div class="players">
+            <div class="player" id="player1">
+                <div class="player-name">Player 1</div>
+                <div class="score" id="score1">0</div>
+                <div class="sets" id="sets1">
+                    <div class="set"></div>
+                    <div class="set"></div>
+                    <div class="set"></div>
+                </div>
+            </div>
+            <div class="player" id="player2">
+                <div class="player-name">Player 2</div>
+                <div class="score" id="score2">0</div>
+                <div class="sets" id="sets2">
+                    <div class="set"></div>
+                    <div class="set"></div>
+                    <div class="set"></div>
+                </div>
+            </div>
+        </div>
+        <div class="serve-indicator" id="serveIndicator">Player 1 to serve</div>
+    </div>
+
+    <script>
+        // WebSocket connection
+        const ws = new WebSocket('ws://' + window.location.hostname + ':8080');
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            updateScoreboard(data);
+        };
+
+        function updateScoreboard(data) {
+            // Update scores
+            document.getElementById('score1').textContent = data.score1;
+            document.getElementById('score2').textContent = data.score2;
+
+            // Update sets
+            updateSets('sets1', data.sets1);
+            updateSets('sets2', data.sets2);
+
+            // Update serve indicator
+            document.getElementById('serveIndicator').textContent = 
+                `Player ${data.servingPlayer} to serve`;
+
+            // Update active player
+            document.getElementById('player1').classList.toggle('active', data.servingPlayer === 1);
+            document.getElementById('player2').classList.toggle('active', data.servingPlayer === 2);
+        }
+
+        function updateSets(elementId, setsWon) {
+            const setsContainer = document.getElementById(elementId);
+            const sets = setsContainer.children;
+            for (let i = 0; i < sets.length; i++) {
+                sets[i].classList.toggle('won', i < setsWon);
+            }
+        }
+    </script>
+</body>
+</html> 

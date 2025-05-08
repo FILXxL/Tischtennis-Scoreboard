@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Tennis Scoreboard Control</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 1rem;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        .control-panel {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .player-controls {
+            margin-bottom: 2rem;
+        }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .player-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .score-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 0.25rem;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:active {
+            background-color: #3d8b40;
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .game-controls button {
+            background-color: #2196F3;
+        }
+
+        .game-controls button:hover {
+            background-color: #1976D2;
+        }
+
+        .game-controls button:active {
+            background-color: #1565C0;
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #e8f5e9;
+            border-radius: 0.25rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="control-panel">
+        <div class="player-controls">
+            <div class="player-header">
+                <div class="player-name">Player 1</div>
+                <div class="current-score" id="score1">0</div>
+            </div>
+            <div class="score-controls">
+                <button onclick="updateScore(1, -1)">-1</button>
+                <button onclick="updateScore(1, 1)">+1</button>
+            </div>
+        </div>
+
+        <div class="player-controls">
+            <div class="player-header">
+                <div class="player-name">Player 2</div>
+                <div class="current-score" id="score2">0</div>
+            </div>
+            <div class="score-controls">
+                <button onclick="updateScore(2, -1)">-1</button>
+                <button onclick="updateScore(2, 1)">+1</button>
+            </div>
+        </div>
+
+        <div class="game-controls">
+            <button onclick="switchServe()">Switch Serve</button>
+            <button onclick="resetGame()">Reset Game</button>
+        </div>
+
+        <div class="status" id="status">
+            Connected to scoreboard
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            score1: 0,
+            score2: 0,
+            sets1: 0,
+            sets2: 0,
+            servingPlayer: 1,
+            serves: 0
+        };
+
+        const ws = new WebSocket('ws://' + window.location.hostname + ':8080');
+
+        ws.onopen = function() {
+            document.getElementById('status').textContent = 'Connected to scoreboard';
+        };
+
+        ws.onclose = function() {
+            document.getElementById('status').textContent = 'Disconnected from scoreboard';
+        };
+
+        function updateScore(player, change) {
+            if (player === 1) {
+                gameState.score1 = Math.max(0, gameState.score1 + change);
+            } else {
+                gameState.score2 = Math.max(0, gameState.score2 + change);
+            }
+
+            // Check for set win
+            if (gameState.score1 >= 11 && gameState.score1 - gameState.score2 >= 2) {
+                gameState.sets1++;
+                resetSet();
+            } else if (gameState.score2 >= 11 && gameState.score2 - gameState.score1 >= 2) {
+                gameState.sets2++;
+                resetSet();
+            }
+
+            // Update serve after every 2 points
+            gameState.serves++;
+            if (gameState.serves >= 2) {
+                gameState.serves = 0;
+                gameState.servingPlayer = gameState.servingPlayer === 1 ? 2 : 1;
+            }
+
+            updateDisplay();
+            sendState();
+        }
+
+        function switchServe() {
+            gameState.servingPlayer = gameState.servingPlayer === 1 ? 2 : 1;
+            gameState.serves = 0;
+            sendState();
+        }
+
+        function resetGame() {
+            gameState = {
+                score1: 0,
+                score2: 0,
+                sets1: 0,
+                sets2: 0,
+                servingPlayer: 1,
+                serves: 0
+            };
+            updateDisplay();
+            sendState();
+        }
+
+        function resetSet() {
+            gameState.score1 = 0;
+            gameState.score2 = 0;
+            gameState.serves = 0;
+        }
+
+        function updateDisplay() {
+            document.getElementById('score1').textContent = gameState.score1;
+            document.getElementById('score2').textContent = gameState.score2;
+        }
+
+        function sendState() {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(gameState));
+            }
+        }
+    </script>
+</body>
+</html> 

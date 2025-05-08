@@ -1,0 +1,12 @@
+{
+  "name": "table-tennis-scoreboard",
+  "version": "1.0.0",
+  "description": "A web-based table tennis scoreboard with remote control",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.13.0"
+  }
+} 
