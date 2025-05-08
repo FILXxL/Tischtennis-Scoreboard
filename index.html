@@ -73,7 +73,7 @@
         }
 
         .set.won {
-            background-color: #4CAF50;
+            background-color: #cfcfcf;
         }
 
         .serve-indicator {
@@ -113,9 +113,27 @@
         // WebSocket connection
         const ws = new WebSocket('ws://' + window.location.hostname + ':8080');
 
+        ws.onopen = function() {
+            console.log('Scoreboard WebSocket connection established');
+        };
+
+        ws.onclose = function() {
+            console.log('Scoreboard WebSocket connection closed');
+        };
+
+        ws.onerror = function(error) {
+            console.error('Scoreboard WebSocket error:', error);
+        };
+
         ws.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            updateScoreboard(data);
+            console.log('Received message:', event.data);
+            // Convert Blob to text before parsing
+            event.data.text().then(text => {
+                const data = JSON.parse(text);
+                updateScoreboard(data);
+            }).catch(error => {
+                console.error('Error processing message:', error);
+            });
         };
 
         function updateScoreboard(data) {

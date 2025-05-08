@@ -42,12 +42,18 @@ wss.on('connection', (ws) => {
     console.log('Client connected');
 
     ws.on('message', (message) => {
+        console.log('Received message:', message.toString());
         // Broadcast the message to all connected clients
         wss.clients.forEach((client) => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
+                console.log('Broadcasting to client');
                 client.send(message);
             }
         });
+    });
+
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
     });
 
     ws.on('close', () => {
@@ -58,4 +64,6 @@ wss.on('connection', (ws) => {
 const PORT = 8080;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+    console.log(`Scoreboard URL: http://localhost:${PORT}`);
+    console.log(`Control URL: http://localhost:${PORT}/control.html`);
 }); 
